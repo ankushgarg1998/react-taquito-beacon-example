@@ -6,7 +6,7 @@ import {
     FetchWalletAPI,
 } from './beacon-functions';
 
-import { fetchPlentyBalanceOfUser, transferPlenty } from './taquito-functions';
+import { fetchPlentyBalanceOfUser, transferPlenty, mintPlenty, getTotalSupply } from './taquito-functions';
 function App() {
     const [walletAddress, setWalletAddress] = useState('');
     const [plentyHolderAddress, setPlentyHolderAddress] = useState('');
@@ -15,6 +15,9 @@ function App() {
     const [amount, setAmount] = useState(0);
     const [receiverAddress, setReceiverAddress] = useState('');
     const [transferLoading, setTransferLoading] = useState(false);
+    const [mintAmount, setMintAmount] = useState(0);
+    const [mintAddress, setMintAddress] = useState('');
+    const [mintLoading, setMintLoading] = useState(false);
 
     useEffect(() => {
         FetchWalletAPI().then((resp) => {
@@ -32,6 +35,31 @@ function App() {
 
     const receiverAddressInputHandler = (value) => {
         setReceiverAddress(value);
+    };
+
+    const showTotalSupplyHandler = () => {
+        getTotalSupply()
+            .then(resp => {
+                alert(resp.totalSupply);
+            })
+            .catch(err => {
+                console.log(err);
+                alert('Something went wrong.');
+            });
+    }
+
+    const mintPlentyHandler = () => {
+        setMintLoading(true);
+        mintPlenty(mintAddress, mintAmount)
+            .then(resp => {
+                setMintLoading(false);
+                alert(resp.opID);
+            })
+            .catch(err => {
+                setMintLoading(false);
+                console.log(err);
+                alert('Something went wrong.');
+            });
     };
 
     const transferPlentyHandler = () => {
@@ -98,6 +126,7 @@ function App() {
             {walletAddress ? (
                 <h3>Connected Wallet Address : {walletAddress}</h3>
             ) : null}
+
             <hr />
             <h1>Get Plenty Balance of User</h1>
             <input
@@ -106,6 +135,7 @@ function App() {
             />
             <button onClick={fetchBalanceHandler}>Get Balance</button>
             {balanceLoading ? <p>...Loading</p> : null}
+
             <hr />
             <h1>Transfer Plenty</h1>
             <input
@@ -118,6 +148,23 @@ function App() {
             />
             <button onClick={transferPlentyHandler}>Send Plenty</button>
             {transferLoading ? <p>...Loading</p> : null}
+
+            <hr />
+            <h1>Mint Plenty</h1>
+            <input
+                type="number"
+                placeholder="amount"
+                onChange={(event) => setMintAmount(parseInt(event.target.value))}
+            />
+            <input
+                placeholder="receiver"
+                onChange={(event) => setMintAddress(event.target.value)}
+            />
+            <button onClick={mintPlentyHandler}>Mint Plenty</button>
+
+            <hr />
+            <h1>Transfer Plenty</h1>
+            <button onClick={showTotalSupplyHandler}>Show Total Plenty Supply</button>
         </div>
     );
 }

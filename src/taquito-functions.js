@@ -10,7 +10,7 @@ const networkObject = {
     }
 };
 const plentyTokenDecimal = 18;
-const plentyContractAddress = 'KT1GRSvLoikDsXujKgZPsGLX8k8VvR2Tq95b';
+const plentyContractAddress = 'KT1UxiNpP1KXCJs4iTtawEE5V3FpRbHNxY2Q';
 
 // This function fetches plenty balance of any address for you.
 export const fetchPlentyBalanceOfUser = async (userAddress) => {
@@ -90,5 +90,59 @@ export const transferPlenty = async (amount, payerAddress) => {
             success: false,
             opID: null,
         };
+    }
+};
+
+
+// This function helps you mint plenty from you account to other account.
+export const mintPlenty = async (minInAddress, amount) => {
+    try {
+        const wallet = new BeaconWallet({ name: appName });
+        const WALLET_RESP = await CheckIfWalletConnected(wallet);
+
+        if (WALLET_RESP.success) {
+            const account = await wallet.client.getActiveAccount();
+            const userAddress = account.address;
+            const Tezos = new TezosToolkit(rpcNode);
+            Tezos.setRpcProvider(rpcNode);
+            Tezos.setWalletProvider(wallet);
+            const plentyContractInstance = await Tezos.contract.at(plentyContractAddress);
+            const mintAmount = Math.floor(amount * Math.pow(10, plentyTokenDecimal));
+
+            let batch = await Tezos.wallet
+                .batch()
+                .withContractCall(
+                    plentyContractInstance.methods.mint(minInAddress, mintAmount)
+                );
+            const batchOperation = await batch.send();
+            await batchOperation.confirmation();
+
+            return {
+                success: true,
+                opID: batchOperation.opHash,
+            };
+        }
+    } catch (err) {
+        console.log(err);
+        return {
+            success: false,
+            opID: null,
+        };
+    }
+};
+
+export const getTotalSupply = async () => {
+    try {
+        const Tezos = new TezosToolkit(rpcNode);
+        Tezos.setRpcProvider(rpcNode);
+        const plentyContractInstance = await Tezos.contract.at(plentyContractAddress);
+        const contractStorage = await plentyContractInstance.storage();
+        const totalSupply = (contractStorage.totalSupply / Math.pow(10, plentyTokenDecimal));
+        return {
+            success: true,
+            totalSupply
+        };
+    } catch (err) {
+        console.log(err);
     }
 };
